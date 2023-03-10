@@ -24,10 +24,10 @@ D2012F$stateoc=as.factor(D2012F$stateoc)
 # a=D2012F %>% group_by(stateoc) %>% summarise(nCounts=n())
 # View(a)
 
-U.states=D2012F %>% filter(stateoc%in%c('NM', 'TX','OK','AZ','UT','CO','KS','NV'))
+U.states=D2012F %>% filter(stateoc%in%c('NM', 'TX','OK','AZ','UT','CO','KS','NV','LA', 'AR'))
 
 # to get county number FIPS codes
-fips_codes %>% filter(state_name=='California')
+fips_codes %>% filter(state_name=='Arkansas')
 
 U.states=U.states %>% 
   group_by(stateoc) %>%
@@ -39,21 +39,22 @@ U.states=U.states %>%
     all( stateoc=="UT") ~ paste('49',countyoc,sep=''),
     all( stateoc=="CO") ~ paste('08',countyoc,sep=''),
     all( stateoc=="KS") ~ paste('20',countyoc,sep=''),
-    all( stateoc=="NV") ~ paste('32',countyoc,sep='')
+    all( stateoc=="NV") ~ paste('32',countyoc,sep=''),
+    all( stateoc=="LA") ~ paste('22',countyoc,sep=''),
+    all( stateoc=="AR") ~ paste('05',countyoc,sep='')
+    
   ))
 
 
 states.counts=U.states %>% group_by(CountyF) %>% summarise(nCounts=n())
 
-### Try to convert it into spatial data
-census_api_key("f587b3ec8f8141986f57549151c63064f1ae1bb7",install=TRUE,overwrite = TRUE)
-readRenviron("~/.Renviron")
-Sys.getenv("CENSUS_API_KEY")
+# set key to dowload data
+source(set_key.R)
 
 year = 2012
 ### US state ###
 states_p <- get_acs(geography = "county", year=year,survey='acs5',
-                    state = c("TX",'OK','NM','AZ','UT','CO','KS','NV'),geometry = TRUE,
+                    state = c("TX",'OK','NM','AZ','UT','CO','KS','NV','LA', 'AR'),geometry = TRUE,
                     variables=c(population = "B01001_001"))
 
 U.states$CountyF=as.factor(U.states$CountyF)
@@ -66,7 +67,6 @@ county_geometry=as(states_p$geometry %>% st_cast("POLYGON",group_or_split=FALSE)
 all.states.tpm=sp::merge(states.counts,states_p,by="CountyF",all=TRUE)
 all.states.tpm=subset(all.states.tpm, select = -c(moe,variable,NAME,geometry))
 all.states=SpatialPolygonsDataFrame(Sr=county_geometry, data=all.states.tpm,match.ID=FALSE)
-#all.states
 
 # # mortality counts
 spplot(all.states,zcol="nCounts",axes=TRUE)
