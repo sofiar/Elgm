@@ -5,6 +5,8 @@ library(acs)
 library(ggplot2)
 library(sf)
 library(sp)
+library(raster)
+library(stars)
 
 data_2012 = read_dta('/home/sofi/DSI posdoc fellowship/codes/mortality_data/US mort 05-15/us_county2012.dta')
 
@@ -80,9 +82,9 @@ all.states.tpm=subset(all.states.tpm, select = -c(moe,variable,NAME,geometry))
 all.states=SpatialPolygonsDataFrame(Sr=county_geometry, data=all.states.tpm,match.ID=FALSE)
 
 # # Plot mortality counts
-spplot(all.states,zcol="nCounts",axes=TRUE)
+#spplot(all.states,zcol="nCounts",axes=TRUE)
 # # Plot population size
-spplot(all.states,zcol="estimate",axes=TRUE)
+#spplot(all.states,zcol="estimate",axes=TRUE)
 
 # # Population by tract
 population_by_tracts <- get_acs(geography = "tract", year=year,survey='acs5',
@@ -106,6 +108,7 @@ rt_pz<-st_rasterize(population_by_tracts %>% dplyr::select(estimate, geometry))#
 write_stars(rt_pz, "popuation_size.tif")
 population_raster = raster("popuation_size.tif")
 
+save.image("statesDta.RData")
 
 #check area and plot
 # area(population_raster)
