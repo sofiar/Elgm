@@ -24,10 +24,10 @@ D2012F$stateoc=as.factor(D2012F$stateoc)
 # a=D2012F %>% group_by(stateoc) %>% summarise(nCounts=n())
 # View(a)
 
-U.states=D2012F %>% filter(stateoc%in%c('NM', 'TX','OK','AZ','UT','CO','KS','NV','LA', 'AR'))
-
+U.states=D2012F %>% filter(stateoc%in%c('NM', 'TX','OK','AZ','UT','CO','KS','NV','LA', 'AR','IA','IL','NV',
+                                        'CA','NE','MS','TN','AL','KY',"IN",'OH'))
 # to get county number FIPS codes
-fips_codes %>% filter(state_name=='Missouri')
+fips_codes %>% filter(state_name=='Ohio')
 
 U.states=U.states %>% 
   group_by(stateoc) %>%
@@ -42,9 +42,19 @@ U.states=U.states %>%
     all( stateoc=="NV") ~ paste('32',countyoc,sep=''),
     all( stateoc=="LA") ~ paste('22',countyoc,sep=''),
     all( stateoc=="AR") ~ paste('05',countyoc,sep=''),
-    all( stateoc=="MO") ~ paste('29',countyoc,sep='')
-    
-  ))
+    all( stateoc=="MO") ~ paste('29',countyoc,sep=''),
+    all( stateoc=="IA") ~ paste('19',countyoc,sep=''),
+    all( stateoc=="IL") ~ paste('17',countyoc,sep=''),
+    all( stateoc=="NV") ~ paste('17',countyoc,sep=''),
+    all( stateoc=="CA") ~ paste('06',countyoc,sep=''),
+    all( stateoc=="NE") ~ paste('31',countyoc,sep=''),
+    all( stateoc=="MS") ~ paste('28',countyoc,sep=''),
+    all( stateoc=="TN") ~ paste('47',countyoc,sep=''),
+    all( stateoc=="AL") ~ paste('01',countyoc,sep=''),
+    all( stateoc=="IN") ~ paste('18',countyoc,sep=''),
+    all( stateoc=="KY") ~ paste('21',countyoc,sep=''),
+    all( stateoc=="OH") ~ paste('39',countyoc,sep='')    
+    ))
 
 
 states.counts=U.states %>% group_by(CountyF) %>% summarise(nCounts=n())
@@ -55,7 +65,8 @@ source('./set_key.R')
 year = 2012
 ### US state ###
 states_p <- get_acs(geography = "county", year=year,survey='acs5',
-                    state = c("TX",'OK','NM','AZ','UT','CO','KS','NV','LA', 'AR','MO'),geometry = TRUE,
+                    state = c("TX",'OK','NM','AZ','UT','CO','KS','NV','LA', 'AR','MO','IA','IL','NV',
+                              'CA','NE','MS','TN','AL','KY',"IN",'OH'),geometry = TRUE,
                     variables=c(population = "B01001_001"))
 
 U.states$CountyF=as.factor(U.states$CountyF)
@@ -63,7 +74,6 @@ states_p$CountyF=as.factor(states_p$GEOID)
 
 pt2=states_p$geometry %>% sf::st_cast("POLYGON",group_or_split=FALSE)
 county_geometry=as(states_p$geometry %>% st_cast("POLYGON",group_or_split=FALSE), 'Spatial')
-
 
 all.states.tpm=sp::merge(states.counts,states_p,by="CountyF",all=TRUE)
 all.states.tpm=subset(all.states.tpm, select = -c(moe,variable,NAME,geometry))
@@ -76,7 +86,8 @@ spplot(all.states,zcol="estimate",axes=TRUE)
 
 # # Population by tract
 population_by_tracts <- get_acs(geography = "tract", year=year,survey='acs5',
-                                state = c("TX",'OK','NM','AZ','UT','CO','KS','NV','LA', 'AR','MO'),geometry = TRUE,
+                                state = c("TX",'OK','NM','AZ','UT','CO','KS','NV','LA', 'AR','MO','IA',
+                                          'IL','NV','CA','NE','MS','TN','AL','KY',"IN",'OH'),geometry = TRUE,
                                 variables=c(population = "B01001_001"))
 
 pt1=population_by_tracts$geometry %>% st_cast("POLYGON",group_or_split=FALSE)
@@ -88,7 +99,7 @@ all.population=SpatialPolygonsDataFrame(Sr=tract_geometry,
 # spplot(all.population,zcol="estimate",axes=TRUE)
 # plot(tract_geometry)
 # lines(county_geometry,col='red')
-#all.states$nCounts[which(is.na(all.states$nCounts))]=1
+#all.states$nCounts[which(is.na(all.states$nCounts))]=0
 
 ## Rasterize population data and set
 rt_pz<-st_rasterize(population_by_tracts %>% dplyr::select(estimate, geometry))#,dx=.3,dy=.3)
@@ -96,4 +107,9 @@ write_stars(rt_pz, "popuation_size.tif")
 population_raster = raster("popuation_size.tif")
 
 
+#check area and plot
+# area(population_raster)
+# plot(population_raster)
+# lines(county_geometry,col='red')
+# lines(tract_geometry,col='blue')
 
